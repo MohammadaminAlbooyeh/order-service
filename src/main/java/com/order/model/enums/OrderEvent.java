@@ -1,0 +1,12 @@
+package com.order.model.enums;
+
+public enum OrderEvent {
+    ORDER_CREATED,
+    INVENTORY_RESERVED,
+    INVENTORY_RESERVATION_FAILED,
+    FRAUD_FLAGGED,
+    AWAITING_PAYMENT,
+    PAYMENT_SUCCEEDED,
+    PAYMENT_FAILED,
+    CANCELLED
+}
