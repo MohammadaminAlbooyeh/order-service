@@ -1,12 +1,12 @@
 package com.order.service;
 
 import com.order.messaging.OrderEventProducer;
-import com.order.messaging.events.CartCheckoutEvent;
 import com.order.model.Order;
 import com.order.model.OrderItem;
 import com.order.model.enums.OrderStatus;
 import com.order.repository.OrderRepository;
 import com.order.saga.OrderSagaOrchestrator;
+import com.platform.events.CartCheckoutEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,14 +1,15 @@
 package com.order.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.order.messaging.events.CartCheckoutEvent;
-import com.order.messaging.events.FraudFlaggedEvent;
-import com.order.messaging.events.InventoryReservationFailedEvent;
-import com.order.messaging.events.InventoryReservedEvent;
-import com.order.messaging.events.PaymentFailedEvent;
-import com.order.messaging.events.PaymentSucceededEvent;
 import com.order.saga.OrderSagaOrchestrator;
 import com.order.service.OrderService;
+import com.platform.events.CartCheckoutEvent;
+import com.platform.events.FraudFlaggedEvent;
+import com.platform.events.InventoryReservationFailedEvent;
+import com.platform.events.InventoryReservedEvent;
+import com.platform.events.PaymentFailedEvent;
+import com.platform.events.PaymentSucceededEvent;
+import com.platform.topics.PlatformTopics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -19,18 +20,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OrderEventConsumer {
 
-    private static final String CART_CHECKOUT_TOPIC = "cart.checkout";
-    private static final String INVENTORY_RESERVED_TOPIC = "inventory.reserved";
-    private static final String INVENTORY_RESERVATION_FAILED_TOPIC = "inventory.reservation_failed";
-    private static final String FRAUD_FLAGGED_TOPIC = "fraud.flagged";
-    private static final String PAYMENT_SUCCEEDED_TOPIC = "payment.succeeded";
-    private static final String PAYMENT_FAILED_TOPIC = "payment.failed";
-
     private final OrderService orderService;
     private final OrderSagaOrchestrator sagaOrchestrator;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = CART_CHECKOUT_TOPIC, groupId = "order-service")
+    @KafkaListener(topics = PlatformTopics.CART_CHECKOUT, groupId = "order-service")
     public void onCartCheckout(String message) {
         CartCheckoutEvent event = parse(message, CartCheckoutEvent.class);
         if (event != null) {
@@ -38,7 +32,7 @@ public class OrderEventConsumer {
         }
     }
 
-    @KafkaListener(topics = INVENTORY_RESERVED_TOPIC, groupId = "order-service")
+    @KafkaListener(topics = PlatformTopics.INVENTORY_RESERVED, groupId = "order-service")
     public void onInventoryReserved(String message) {
         InventoryReservedEvent event = parse(message, InventoryReservedEvent.class);
         if (event != null) {
@@ -46,7 +40,7 @@ public class OrderEventConsumer {
         }
     }
 
-    @KafkaListener(topics = INVENTORY_RESERVATION_FAILED_TOPIC, groupId = "order-service")
+    @KafkaListener(topics = PlatformTopics.INVENTORY_RESERVATION_FAILED, groupId = "order-service")
     public void onInventoryReservationFailed(String message) {
         InventoryReservationFailedEvent event = parse(message, InventoryReservationFailedEvent.class);
         if (event != null) {
@@ -54,7 +48,7 @@ public class OrderEventConsumer {
         }
     }
 
-    @KafkaListener(topics = FRAUD_FLAGGED_TOPIC, groupId = "order-service")
+    @KafkaListener(topics = PlatformTopics.FRAUD_FLAGGED, groupId = "order-service")
     public void onFraudFlagged(String message) {
         FraudFlaggedEvent event = parse(message, FraudFlaggedEvent.class);
         if (event != null) {
@@ -62,7 +56,7 @@ public class OrderEventConsumer {
         }
     }
 
-    @KafkaListener(topics = PAYMENT_SUCCEEDED_TOPIC, groupId = "order-service")
+    @KafkaListener(topics = PlatformTopics.PAYMENT_SUCCEEDED, groupId = "order-service")
     public void onPaymentSucceeded(String message) {
         PaymentSucceededEvent event = parse(message, PaymentSucceededEvent.class);
         if (event != null) {
@@ -70,7 +64,7 @@ public class OrderEventConsumer {
         }
     }
 
-    @KafkaListener(topics = PAYMENT_FAILED_TOPIC, groupId = "order-service")
+    @KafkaListener(topics = PlatformTopics.PAYMENT_FAILED, groupId = "order-service")
     public void onPaymentFailed(String message) {
         PaymentFailedEvent event = parse(message, PaymentFailedEvent.class);
         if (event != null) {

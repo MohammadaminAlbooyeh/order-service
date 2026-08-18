@@ -1,6 +1,7 @@
 package com.order.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.platform.topics.PlatformTopics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,12 +16,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderEventProducer {
 
-    public static final String ORDER_CREATED_TOPIC = "order.created";
-    public static final String ORDER_AWAITING_PAYMENT_TOPIC = "order.awaiting_payment";
-    public static final String ORDER_CONFIRMED_TOPIC = "order.confirmed";
-    public static final String ORDER_CANCELLED_TOPIC = "order.cancelled";
-    public static final String RESERVATION_CANCEL_TOPIC = "inventory.reservation_cancel";
-
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper objectMapper;
 
@@ -32,7 +27,7 @@ public class OrderEventProducer {
                 "items", items,
                 "totalAmount", totalAmount
         );
-        send(ORDER_CREATED_TOPIC, orderId, payload);
+        send(PlatformTopics.ORDER_CREATED, orderId, payload);
     }
 
     public void publishAwaitingPayment(String orderId, BigDecimal amount, String userId) {
@@ -41,7 +36,7 @@ public class OrderEventProducer {
                 "amount", amount,
                 "userId", userId
         );
-        send(ORDER_AWAITING_PAYMENT_TOPIC, orderId, payload);
+        send(PlatformTopics.ORDER_AWAITING_PAYMENT, orderId, payload);
     }
 
     public void publishOrderConfirmed(String orderId, String userId, List<Map<String, Object>> items) {
@@ -50,7 +45,7 @@ public class OrderEventProducer {
                 "userId", userId,
                 "items", items
         );
-        send(ORDER_CONFIRMED_TOPIC, orderId, payload);
+        send(PlatformTopics.ORDER_CONFIRMED, orderId, payload);
     }
 
     public void publishOrderCancelled(String orderId, String reason) {
@@ -58,12 +53,12 @@ public class OrderEventProducer {
                 "orderId", orderId,
                 "reason", reason == null ? "" : reason
         );
-        send(ORDER_CANCELLED_TOPIC, orderId, payload);
+        send(PlatformTopics.ORDER_CANCELLED, orderId, payload);
     }
 
     public void publishReservationCancel(String orderId) {
         Map<String, Object> payload = Map.of("orderId", orderId);
-        send(RESERVATION_CANCEL_TOPIC, orderId, payload);
+        send(PlatformTopics.INVENTORY_RESERVATION_CANCEL, orderId, payload);
     }
 
     private void send(String topic, String key, Map<String, Object> payload) {

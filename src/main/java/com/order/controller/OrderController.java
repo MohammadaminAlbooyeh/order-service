@@ -1,8 +1,8 @@
 package com.order.controller;
 
-import com.order.messaging.events.CartCheckoutEvent;
 import com.order.model.Order;
 import com.order.service.OrderService;
+import com.platform.events.CartCheckoutEvent;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
