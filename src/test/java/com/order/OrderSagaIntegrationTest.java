@@ -1,5 +1,6 @@
 package com.order;
 
+import com.order.messaging.OutboxPublisher;
 import com.order.model.Order;
 import com.order.model.enums.OrderStatus;
 import com.order.repository.OrderRepository;
@@ -45,6 +46,9 @@ class OrderSagaIntegrationTest {
     private OrderRepository orderRepository;
 
     @Autowired
+    private OutboxPublisher outboxPublisher;
+
+    @Autowired
     private EmbeddedKafkaBroker embeddedKafkaBroker;
 
     private KafkaTemplate<String, String> producer;
@@ -54,15 +58,18 @@ class OrderSagaIntegrationTest {
         String orderId = "ord-happy";
 
         send("cart.checkout", orderId, checkoutPayload(orderId, 1200));
+        flushOutbox();
         assertThat(consume("order.created", orderId)).isNotNull();
         awaitStatus(orderId, OrderStatus.PENDING);
 
         send("inventory.reserved", orderId,
                 "{\"orderId\":\"%s\",\"reservations\":[{\"reservationId\":\"r1\",\"productId\":\"p1\",\"quantity\":1}]}".formatted(orderId));
+        flushOutbox();
         assertThat(consume("order.awaiting_payment", orderId)).isNotNull();
         awaitStatus(orderId, OrderStatus.AWAITING_PAYMENT);
 
         send("payment.succeeded", orderId, "{\"orderId\":\"%s\",\"transactionId\":\"t1\",\"amount\":1200}".formatted(orderId));
+        flushOutbox();
         assertThat(consume("order.confirmed", orderId)).isNotNull();
         awaitStatus(orderId, OrderStatus.CONFIRMED);
     }
@@ -72,10 +79,12 @@ class OrderSagaIntegrationTest {
         String orderId = "ord-fail";
 
         send("cart.checkout", orderId, checkoutPayload(orderId, 50));
+        flushOutbox();
         awaitStatus(orderId, OrderStatus.PENDING);
 
         send("inventory.reservation_failed", orderId,
                 "{\"orderId\":\"%s\",\"reason\":\"Insufficient stock\"}".formatted(orderId));
+        flushOutbox();
         assertThat(consume("order.cancelled", orderId)).isNotNull();
         awaitStatus(orderId, OrderStatus.CANCELLED);
     }
@@ -85,14 +94,17 @@ class OrderSagaIntegrationTest {
         String orderId = "ord-fraud";
 
         send("cart.checkout", orderId, checkoutPayload(orderId, 500));
+        flushOutbox();
         awaitStatus(orderId, OrderStatus.PENDING);
 
         send("inventory.reserved", orderId,
                 "{\"orderId\":\"%s\",\"reservations\":[{\"reservationId\":\"r2\",\"productId\":\"p2\",\"quantity\":1}]}".formatted(orderId));
+        flushOutbox();
         awaitStatus(orderId, OrderStatus.AWAITING_PAYMENT);
 
         send("fraud.flagged", orderId,
                 "{\"orderId\":\"%s\",\"riskScore\":\"0.9\",\"reason\":\"suspicious\"}".formatted(orderId));
+        flushOutbox();
         assertThat(consume("order.cancelled", orderId)).isNotNull();
         assertThat(consume("inventory.reservation_cancel", orderId)).isNotNull();
         awaitStatus(orderId, OrderStatus.CANCELLED);
@@ -100,6 +112,10 @@ class OrderSagaIntegrationTest {
 
     private void send(String topic, String key, String payload) throws Exception {
         producer().send(topic, key, payload).get(5, TimeUnit.SECONDS);
+    }
+
+    private void flushOutbox() {
+        outboxPublisher.publishPendingEvents();
     }
 
     private KafkaTemplate<String, String> producer() {
