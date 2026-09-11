@@ -15,4 +15,8 @@ public interface ProcessedEventRepository extends JpaRepository<ProcessedEvent, 
                                                             @Param("consumerGroup") String consumerGroup);
 
     boolean existsByEventIdAndConsumerGroup(String eventId, String consumerGroup);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("delete from ProcessedEvent p where p.processedAt < :cutoff")
+    int deleteByProcessedAtBefore(@Param("cutoff") java.time.LocalDateTime cutoff);
 }

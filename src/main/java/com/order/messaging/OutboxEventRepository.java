@@ -21,4 +21,9 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
     List<OutboxEvent> findByAggregateIdAndEventTypeAndStatus(@Param("aggregateId") String aggregateId,
                                                               @Param("eventType") String eventType,
                                                               @Param("status") OutboxEvent.OutboxStatus status);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("delete from OutboxEvent o where o.status = :status and o.publishedAt < :cutoff")
+    int deleteByStatusAndPublishedAtBefore(@Param("status") OutboxEvent.OutboxStatus status,
+                                           @Param("cutoff") LocalDateTime cutoff);
 }
