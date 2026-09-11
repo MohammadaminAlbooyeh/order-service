@@ -36,13 +36,11 @@ public class OrderEventConsumer {
     public void onCartCheckout(ConsumerRecord<String, String> record, Acknowledgment ack) {
         processWithIdempotency(record, ack, PlatformTopics.CART_CHECKOUT, message -> {
             CartCheckoutEvent event = parse(message, CartCheckoutEvent.class);
-            if (event != null) {
-                String eventId = event.getOrderId() + ":checkout";
-                if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.CART_CHECKOUT)) {
-                    orderService.createOrderFromCheckout(event);
-                } else {
-                    log.info("Duplicate CartCheckout event ignored: {}", eventId);
-                }
+            String eventId = event.getOrderId() + ":checkout";
+            if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.CART_CHECKOUT)) {
+                orderService.createOrderFromCheckout(event);
+            } else {
+                log.info("Duplicate CartCheckout event ignored: {}", eventId);
             }
         });
     }
@@ -52,16 +50,14 @@ public class OrderEventConsumer {
     public void onInventoryReserved(ConsumerRecord<String, String> record, Acknowledgment ack) {
         processWithIdempotency(record, ack, PlatformTopics.INVENTORY_RESERVED, message -> {
             InventoryReservedEvent event = parse(message, InventoryReservedEvent.class);
-            if (event != null) {
-                String reservationId = (event.getReservations() != null && !event.getReservations().isEmpty())
-                        ? event.getReservations().get(0).getReservationId()
-                        : UUID.randomUUID().toString();
-                String eventId = event.getOrderId() + ":reserved:" + reservationId;
-                if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.INVENTORY_RESERVED)) {
-                    sagaOrchestrator.onInventoryReserved(event.getOrderId());
-                } else {
-                    log.info("Duplicate InventoryReserved event ignored: {}", eventId);
-                }
+            String reservationId = (event.getReservations() != null && !event.getReservations().isEmpty())
+                    ? event.getReservations().get(0).getReservationId()
+                    : UUID.randomUUID().toString();
+            String eventId = event.getOrderId() + ":reserved:" + reservationId;
+            if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.INVENTORY_RESERVED)) {
+                sagaOrchestrator.onInventoryReserved(event.getOrderId());
+            } else {
+                log.info("Duplicate InventoryReserved event ignored: {}", eventId);
             }
         });
     }
@@ -71,13 +67,11 @@ public class OrderEventConsumer {
     public void onInventoryReservationFailed(ConsumerRecord<String, String> record, Acknowledgment ack) {
         processWithIdempotency(record, ack, PlatformTopics.INVENTORY_RESERVATION_FAILED, message -> {
             InventoryReservationFailedEvent event = parse(message, InventoryReservationFailedEvent.class);
-            if (event != null) {
-                String eventId = event.getOrderId() + ":reservation_failed";
-                if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.INVENTORY_RESERVATION_FAILED)) {
-                    sagaOrchestrator.onInventoryReservationFailed(event.getOrderId(), event.getReason());
-                } else {
-                    log.info("Duplicate InventoryReservationFailed event ignored: {}", eventId);
-                }
+            String eventId = event.getOrderId() + ":reservation_failed";
+            if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.INVENTORY_RESERVATION_FAILED)) {
+                sagaOrchestrator.onInventoryReservationFailed(event.getOrderId(), event.getReason());
+            } else {
+                log.info("Duplicate InventoryReservationFailed event ignored: {}", eventId);
             }
         });
     }
@@ -87,13 +81,11 @@ public class OrderEventConsumer {
     public void onFraudFlagged(ConsumerRecord<String, String> record, Acknowledgment ack) {
         processWithIdempotency(record, ack, PlatformTopics.FRAUD_FLAGGED, message -> {
             FraudFlaggedEvent event = parse(message, FraudFlaggedEvent.class);
-            if (event != null) {
-                String eventId = event.getOrderId() + ":fraud";
-                if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.FRAUD_FLAGGED)) {
-                    sagaOrchestrator.onFraudFlagged(event.getOrderId(), event.getReason());
-                } else {
-                    log.info("Duplicate FraudFlagged event ignored: {}", eventId);
-                }
+            String eventId = event.getOrderId() + ":fraud";
+            if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.FRAUD_FLAGGED)) {
+                sagaOrchestrator.onFraudFlagged(event.getOrderId(), event.getReason());
+            } else {
+                log.info("Duplicate FraudFlagged event ignored: {}", eventId);
             }
         });
     }
@@ -103,13 +95,11 @@ public class OrderEventConsumer {
     public void onPaymentSucceeded(ConsumerRecord<String, String> record, Acknowledgment ack) {
         processWithIdempotency(record, ack, PlatformTopics.PAYMENT_SUCCEEDED, message -> {
             PaymentSucceededEvent event = parse(message, PaymentSucceededEvent.class);
-            if (event != null) {
-                String eventId = event.getOrderId() + ":payment_succeeded:" + event.getTransactionId();
-                if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.PAYMENT_SUCCEEDED)) {
-                    sagaOrchestrator.onPaymentSucceeded(event.getOrderId());
-                } else {
-                    log.info("Duplicate PaymentSucceeded event ignored: {}", eventId);
-                }
+            String eventId = event.getOrderId() + ":payment_succeeded:" + event.getTransactionId();
+            if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.PAYMENT_SUCCEEDED)) {
+                sagaOrchestrator.onPaymentSucceeded(event.getOrderId());
+            } else {
+                log.info("Duplicate PaymentSucceeded event ignored: {}", eventId);
             }
         });
     }
@@ -119,13 +109,11 @@ public class OrderEventConsumer {
     public void onPaymentFailed(ConsumerRecord<String, String> record, Acknowledgment ack) {
         processWithIdempotency(record, ack, PlatformTopics.PAYMENT_FAILED, message -> {
             PaymentFailedEvent event = parse(message, PaymentFailedEvent.class);
-            if (event != null) {
-                String eventId = event.getOrderId() + ":payment_failed:" + event.getTransactionId();
-                if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.PAYMENT_FAILED)) {
-                    sagaOrchestrator.onPaymentFailed(event.getOrderId(), event.getReason());
-                } else {
-                    log.info("Duplicate PaymentFailed event ignored: {}", eventId);
-                }
+            String eventId = event.getOrderId() + ":payment_failed:" + event.getTransactionId();
+            if (idempotencyService.tryMarkProcessed(eventId, CONSUMER_GROUP, PlatformTopics.PAYMENT_FAILED)) {
+                sagaOrchestrator.onPaymentFailed(event.getOrderId(), event.getReason());
+            } else {
+                log.info("Duplicate PaymentFailed event ignored: {}", eventId);
             }
         });
     }
@@ -147,7 +135,7 @@ public class OrderEventConsumer {
             return objectMapper.readValue(message, type);
         } catch (Exception e) {
             log.error("Failed to parse Kafka message as {}", type.getSimpleName(), e);
-            return null;
+            throw new IllegalArgumentException("Invalid Kafka payload for " + type.getSimpleName(), e);
         }
     }
 
