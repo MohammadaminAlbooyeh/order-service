@@ -1,0 +1,7 @@
+.git
+target/
+!.gitignore
+.idea/
+.vscode/
+*.iml
+.DS_Store

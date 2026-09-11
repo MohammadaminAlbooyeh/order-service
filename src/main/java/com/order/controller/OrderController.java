@@ -5,6 +5,7 @@ import com.order.service.OrderService;
 import com.platform.events.CartCheckoutEvent;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +57,6 @@ public class OrderController {
     }
 
     public record CreateOrderRequest(@NotBlank String userId,
-                                     @Valid List<CartCheckoutEvent.Item> items) {
+                                      @NotEmpty @Valid List<CartCheckoutEvent.Item> items) {
     }
 }
