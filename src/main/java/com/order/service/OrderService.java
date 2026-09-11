@@ -86,6 +86,16 @@ public class OrderService {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<Order> listOrders(String userId,
+                                                                  org.springframework.data.domain.Pageable pageable) {
+        int size = Math.min(pageable.getPageSize(), 100);
+        org.springframework.data.domain.Pageable capped =
+                org.springframework.data.domain.PageRequest.of(pageable.getPageNumber(), size,
+                        org.springframework.data.domain.Sort.by("createdAt").descending());
+        return orderRepository.findByUserId(userId, capped);
+    }
+
     @Transactional
     public Order cancelOrder(String orderId, String reason) {
         sagaOrchestrator.cancelOrder(orderId, reason == null ? "Manually cancelled" : reason);

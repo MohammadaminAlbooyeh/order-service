@@ -38,8 +38,14 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<Order> listOrders(@RequestParam String userId) {
-        return orderService.listOrders(userId);
+    public PageResponse<Order> listOrders(@RequestParam String userId,
+                                          @RequestParam(defaultValue = "0") int page,
+                                          @RequestParam(defaultValue = "20") int size) {
+        int capped = Math.min(Math.max(size, 1), 100);
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(Math.max(page, 0), capped,
+                        org.springframework.data.domain.Sort.by("createdAt").descending());
+        return PageResponse.of(orderService.listOrders(userId, pageable));
     }
 
     @PostMapping("/{orderId}/cancel")

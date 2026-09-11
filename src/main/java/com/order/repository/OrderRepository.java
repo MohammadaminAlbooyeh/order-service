@@ -17,6 +17,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("select o from Order o left join fetch o.items where o.userId = :userId order by o.createdAt desc")
     List<Order> findByUserIdOrderByCreatedAtDesc(@Param("userId") String userId);
 
+    org.springframework.data.domain.Page<Order> findByUserId(String userId,
+                                                             org.springframework.data.domain.Pageable pageable);
+
     List<Order> findByStatusInAndCreatedAtBefore(List<com.order.model.enums.OrderStatus> statuses,
                                                 LocalDateTime deadline);
 }
