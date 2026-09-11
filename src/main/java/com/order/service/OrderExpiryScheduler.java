@@ -17,24 +17,32 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderExpiryScheduler {
 
-    private static final long ORDER_TTL_MINUTES = 15;
+    private static final List<OrderStatus> EXPIRABLE_STATUSES = List.of(
+            OrderStatus.PENDING, OrderStatus.INVENTORY_RESERVED, OrderStatus.AWAITING_PAYMENT);
 
     private final OrderRepository orderRepository;
     private final OrderService orderService;
 
-    @Scheduled(fixedDelay = 60_000)
-    @Transactional
+    @org.springframework.beans.factory.annotation.Value("${order.expiry.ttl-minutes:15}")
+    private long orderTtlMinutes = 15;
+
+    @org.springframework.beans.factory.annotation.Value("${order.expiry.enabled:true}")
+    private boolean expiryEnabled = true;
+
+    @Scheduled(fixedDelayString = "${order.expiry.poll-interval-ms:60000}")
     public void expireStaleOrders() {
-        LocalDateTime deadline = LocalDateTime.now().minusMinutes(ORDER_TTL_MINUTES);
-        List<Order> stale = orderRepository.findAll().stream()
-                .filter(o -> o.getCreatedAt().isBefore(deadline))
-                .filter(o -> o.getStatus() == OrderStatus.PENDING
-                        || o.getStatus() == OrderStatus.INVENTORY_RESERVED
-                        || o.getStatus() == OrderStatus.AWAITING_PAYMENT)
-                .toList();
+        if (!expiryEnabled) {
+            return;
+        }
+        LocalDateTime deadline = LocalDateTime.now().minusMinutes(orderTtlMinutes);
+        List<Order> stale = orderRepository.findByStatusInAndCreatedAtBefore(EXPIRABLE_STATUSES, deadline);
         for (Order order : stale) {
-            log.info("Expiring stale order {}", order.getOrderId());
-            orderService.cancelOrder(order.getOrderId(), "Order timed out");
+            try {
+                log.info("Expiring stale order {}", order.getOrderId());
+                orderService.cancelOrder(order.getOrderId(), "Order timed out");
+            } catch (Exception e) {
+                log.warn("Failed to expire order {}: {}", order.getOrderId(), e.getMessage());
+            }
         }
     }
 }
