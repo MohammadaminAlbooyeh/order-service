@@ -42,7 +42,7 @@ spring:
       concurrency: 3
     retry:
       topic:
-        suffix: .DLR
+        suffix: .DLT
       attempts: 3
       initial-interval: 1000
       multiplier: 2.0

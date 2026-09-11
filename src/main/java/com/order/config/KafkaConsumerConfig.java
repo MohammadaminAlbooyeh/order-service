@@ -56,6 +56,6 @@ public class KafkaConsumerConfig {
     @Bean
     public DeadLetterPublishingRecoverer deadLetterPublishingRecoverer(org.springframework.kafka.core.KafkaTemplate<String, String> kafkaTemplate) {
         return new DeadLetterPublishingRecoverer(kafkaTemplate,
-                (record, ex) -> new org.apache.kafka.common.TopicPartition(record.topic() + ".DLR", record.partition()));
+                (record, ex) -> new org.apache.kafka.common.TopicPartition(record.topic() + ".DLT", record.partition()));
     }
 }
