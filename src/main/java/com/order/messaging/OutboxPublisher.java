@@ -17,11 +17,23 @@ public class OutboxPublisher {
 
     private final OutboxEventRepository outboxEventRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    @org.springframework.lang.Nullable
+    private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
-    private static final int BATCH_SIZE = 100;
+    @org.springframework.beans.factory.annotation.Value("${outbox.batch-size:100}")
+    private int batchSize = 100;
+
     private static final int MAX_RETRIES = 5;
 
-    @Scheduled(fixedDelay = 1000)
+    @jakarta.annotation.PostConstruct
+    void registerMetrics() {
+        if (meterRegistry != null) {
+            meterRegistry.gauge("order.outbox.pending", this,
+                    r -> (double) r.outboxEventRepository.count());
+        }
+    }
+
+    @Scheduled(fixedDelayString = "${outbox.poll-interval-ms:1000}")
     @Transactional
     public void publishPendingEvents() {
         List<OutboxEvent> pendingEvents = outboxEventRepository
@@ -32,7 +44,7 @@ public class OutboxPublisher {
         }
 
         List<OutboxEvent> eventsToProcess = pendingEvents.stream()
-                .limit(BATCH_SIZE)
+                .limit(batchSize)
                 .toList();
 
         for (OutboxEvent event : eventsToProcess) {

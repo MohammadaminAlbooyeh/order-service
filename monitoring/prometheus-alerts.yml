@@ -1,0 +1,29 @@
+groups:
+  - name: order-service
+    rules:
+      - alert: OrderServiceDown
+        expr: up{job="order-service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "order-service target is down"
+          description: "No metrics scraped from {{ $labels.instance }} for 2m."
+
+      - alert: OrderOutboxBacklog
+        expr: order_outbox_pending > 50
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Outbox relay is falling behind"
+          description: "{{ $value }} events pending publish for 5m - Kafka may be unavailable or the relay stopped."
+
+      - alert: OrderDeadLetters
+        expr: increase(order_kafka_dlt_total[15m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Messages routed to a dead-letter topic"
+          description: "{{ $value }} message(s) on {{ $labels.topic }} in 15m - inspect and reprocess."
