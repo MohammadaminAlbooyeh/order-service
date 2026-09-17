@@ -3,3 +3,7 @@ target/
 .idea/
 .vscode/
 .DS_Store
+
+# Stray Maven build-output directory produced by a mangled shell glob
+# (literal directory name: []eerw-pmoj). Build output must stay untracked.
+\[\]eerw-pmoj/
