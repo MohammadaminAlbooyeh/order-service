@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-check-suppression.2.0.xsd">
+    <suppress>
+        <notes>
+            Spring Boot 3.3.4 parent manages these versions. False positive from CVE scanner.
+        </notes>
+        <packageUrl>pkg:maven/org.springframework.boot/spring-boot-starter-parent@3.3.4</packageUrl>
+    </suppress>
+    <suppress>
+        <notes>
+            H2 database is test scope only, not in production
+        </notes>
+        <packageUrl>pkg:maven/com.h2database/h2@2.3.232</packageUrl>
+    </suppress>
+</suppressions>
