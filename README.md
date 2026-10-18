@@ -80,6 +80,145 @@ flowchart LR
 - **OutboxPublisher** — relays the transactional `outbox_events` table to Kafka via **OrderEventProducer**, guaranteeing at-least-once delivery.
 - **OrderExpiryScheduler** / **OutboxCleanup** — background jobs for TTL expiry and outbox/processed-events retention.
 
+### ASCII system architecture
+
+```
+                         +-------------------+
+                         | Client / Gateway  |
+                         +-------------------+
+                                   |
+                        HTTPS  POST/GET /api/orders
+                                   v
+                         +-------------------+
+                         | ApiKeyAuthFilter  |
+                         | RateLimitFilter   |---------> Redis (rate limit budget)
+                         +-------------------+
+                                   |
+                                   v
+                         +-------------------+          +----------------------+
+       cart.checkout --> | OrderEventConsumer|--------> | IdempotencyService   |
+       (Kafka topic)     +-------------------+          | (processed_events)   |
+                                   |                     +----------------------+
+                                   v                               ^
+                         +-------------------+                     |
+                         |   OrderService    |<----- OrderExpiryScheduler
+                         +-------------------+
+                          |       |        |
+                          v       v        v
+                 +-----------+ +-----------------+ +------------------------+
+                 |  Order    | | OrderSagaOrch.  | |   OrderRepository      |
+                 |StateMach. | | + Compensation  | |   -> PostgreSQL        |
+                 +-----------+ |   Handler       | +------------------------+
+                                +-----------------+
+                                        |
+                                        v
+                               +-----------------+
+                               |  outbox_events  | <---- OutboxCleanup (TTL purge)
+                               +-----------------+
+                                        |
+                                        v
+                               +-----------------+
+                               | OutboxPublisher |
+                               +-----------------+
+                                        |
+                                        v
+                               +-----------------+
+                               |OrderEventProducer|
+                               +-----------------+
+                                        |
+                                        v
+                               +-----------------+
+                               |      Kafka      |
+                               +-----------------+
+                                 |             |
+                  order.created /             | failed records
+                  order.confirmed / ...       v
+                                     +----------------------+
+                                     |  DeadLetterConsumer  |---> {topic}.DLT
+                                     +----------------------+
+```
+
+### Project file structure
+
+```
+order-service/
+├── Dockerfile
+├── docker-compose.yml
+├── pom.xml
+├── suppressions.xml
+├── .github/
+│   └── workflows/
+│       └── ci.yml                     # CI/CD: build, test, security scan
+├── monitoring/
+│   ├── grafana-dashboard.json
+│   └── prometheus-alerts.yml
+└── src/
+    ├── main/
+    │   ├── java/com/order/
+    │   │   ├── OrderServiceApplication.java
+    │   │   ├── config/
+    │   │   │   ├── ApiKeyAuthFilter.java
+    │   │   │   ├── KafkaConsumerConfig.java
+    │   │   │   ├── RateLimitFilter.java
+    │   │   │   └── SecurityConfig.java
+    │   │   ├── controller/
+    │   │   │   ├── OrderController.java
+    │   │   │   └── PageResponse.java
+    │   │   ├── exception/
+    │   │   │   └── GlobalExceptionHandler.java
+    │   │   ├── messaging/
+    │   │   │   ├── DeadLetterConsumer.java
+    │   │   │   ├── IdempotencyService.java
+    │   │   │   ├── OrderEventConsumer.java
+    │   │   │   ├── OrderEventProducer.java
+    │   │   │   ├── OutboxCleanup.java
+    │   │   │   ├── OutboxEvent.java
+    │   │   │   ├── OutboxEventRepository.java
+    │   │   │   ├── OutboxPublisher.java
+    │   │   │   ├── ProcessedEvent.java
+    │   │   │   └── ProcessedEventRepository.java
+    │   │   ├── model/
+    │   │   │   ├── Order.java
+    │   │   │   ├── OrderItem.java
+    │   │   │   └── enums/
+    │   │   │       ├── OrderEvent.java
+    │   │   │       └── OrderStatus.java
+    │   │   ├── repository/
+    │   │   │   └── OrderRepository.java
+    │   │   ├── saga/
+    │   │   │   ├── CompensationHandler.java
+    │   │   │   └── OrderSagaOrchestrator.java
+    │   │   ├── service/
+    │   │   │   ├── OrderExpiryScheduler.java
+    │   │   │   └── OrderService.java
+    │   │   └── statemachine/
+    │   │       └── OrderStateMachine.java
+    │   └── resources/
+    │       ├── application.yml
+    │       ├── application-dev.yml
+    │       └── db/migration/
+    │           ├── V1__create_orders_table.sql
+    │           ├── V2__create_order_items_table.sql
+    │           ├── V3__create_outbox_events_table.sql
+    │           ├── V4__create_processed_events_table.sql
+    │           └── V5__add_orders_expiry_index.sql
+    └── test/java/com/order/
+        ├── OrderSagaIntegrationTest.java
+        ├── contract/KafkaEventContractTest.java
+        ├── controller/OrderControllerTest.java
+        ├── messaging/
+        │   ├── IdempotencyServiceTest.java
+        │   ├── OutboxCleanupTest.java
+        │   └── OutboxPublisherTest.java
+        ├── saga/
+        │   ├── CompensationHandlerTest.java
+        │   └── OrderSagaOrchestratorTest.java
+        ├── service/
+        │   ├── OrderExpirySchedulerTest.java
+        │   └── OrderServiceTest.java
+        └── statemachine/OrderStateMachineTest.java
+```
+
 ## Responsibilities
 
 - Create orders from `cart.checkout` (idempotent per `orderId`) or direct REST `POST /api/orders`.
