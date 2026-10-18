@@ -3,6 +3,44 @@
 Order lifecycle service for the platform. Owns orders and orchestrates the order saga
 over Kafka (inventory → fraud → payment) with compensation on failure.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    Client[REST client / Gateway] -->|POST,GET /api/orders| Controller[OrderController]
+    Cart[cart.checkout topic] --> Consumer[OrderEventConsumer]
+
+    subgraph order-service
+        Controller --> OrderSvc[OrderService]
+        Consumer --> Idem[IdempotencyService / processed_events]
+        Idem --> OrderSvc
+        OrderSvc --> SM[OrderStateMachine]
+        OrderSvc --> Saga[OrderSagaOrchestrator]
+        Saga --> Comp[CompensationHandler]
+        OrderSvc --> Repo[OrderRepository]
+        Repo --> DB[(PostgreSQL)]
+        OrderSvc --> Outbox[(outbox_events)]
+        Outbox --> Publisher[OutboxPublisher]
+        Publisher --> Producer[OrderEventProducer]
+        Expiry[OrderExpiryScheduler] --> OrderSvc
+        Cleanup[OutboxCleanup] --> Outbox
+        Cleanup --> Idem
+        RateLimit[RateLimitFilter] -.-> Redis[(Redis)]
+        Controller -.-> ApiKey[ApiKeyAuthFilter]
+    end
+
+    Producer -->|order.created / order.confirmed / order.cancelled / ...| Kafka[(Kafka)]
+    Kafka --> Consumer
+    DLT[DeadLetterConsumer] -.->|failed records| DLTTopic[<topic>.DLT]
+    Consumer -.-> DLT
+```
+
+- **OrderController** — REST API, guarded by `ApiKeyAuthFilter` and `RateLimitFilter` (Redis-backed).
+- **OrderService** — core business logic; drives the **OrderStateMachine** and **OrderSagaOrchestrator** (with **CompensationHandler** for rollback on failure).
+- **OrderEventConsumer** — consumes saga events from Kafka, de-duplicated via **IdempotencyService** (`processed_events` table); failures route to **DeadLetterConsumer** / `<topic>.DLT`.
+- **OutboxPublisher** — relays the transactional `outbox_events` table to Kafka via **OrderEventProducer**, guaranteeing at-least-once delivery.
+- **OrderExpiryScheduler** / **OutboxCleanup** — background jobs for TTL expiry and outbox/processed-events retention.
+
 ## Responsibilities
 
 - Create orders from `cart.checkout` (idempotent per `orderId`) or direct REST `POST /api/orders`.
