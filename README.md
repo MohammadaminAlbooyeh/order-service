@@ -35,6 +35,45 @@ flowchart LR
     Consumer -.-> DLT
 ```
 
+<details>
+<summary>ASCII version (for non-Mermaid renderers)</summary>
+
+```
+                 POST/GET /api/orders
+ Client/Gateway ───────────────────────► OrderController ──┐
+                                        (ApiKeyAuthFilter,  │
+                                         RateLimitFilter)   │
+                                           │ (Redis) ◄──────┘
+                                           ▼
+ cart.checkout topic ──► OrderEventConsumer                 OrderService ◄── OrderExpiryScheduler
+                               │                                │  │
+                               ▼                                │  ├──► OrderStateMachine
+                        IdempotencyService                      │  └──► OrderSagaOrchestrator ──► CompensationHandler
+                      (processed_events) ◄──── OutboxCleanup    │
+                               │                   │             ▼
+                               └───────────────────┘       OrderRepository ──► PostgreSQL
+                                                                 │
+                                                                 ▼
+                                                           outbox_events ◄──── OutboxCleanup
+                                                                 │
+                                                                 ▼
+                                                           OutboxPublisher
+                                                                 │
+                                                                 ▼
+                                                          OrderEventProducer
+                                                                 │
+                        order.created / order.confirmed /       ▼
+                        order.cancelled / ... ◄─────────────── Kafka
+                                                                 │
+                                                                 ▼
+                                                      OrderEventConsumer
+                                                                 │ (on failure)
+                                                                 ▼
+                                                      DeadLetterConsumer ──► <topic>.DLT
+```
+
+</details>
+
 - **OrderController** — REST API, guarded by `ApiKeyAuthFilter` and `RateLimitFilter` (Redis-backed).
 - **OrderService** — core business logic; drives the **OrderStateMachine** and **OrderSagaOrchestrator** (with **CompensationHandler** for rollback on failure).
 - **OrderEventConsumer** — consumes saga events from Kafka, de-duplicated via **IdempotencyService** (`processed_events` table); failures route to **DeadLetterConsumer** / `<topic>.DLT`.
