@@ -31,7 +31,7 @@ flowchart LR
 
     Producer -->|order.created / order.confirmed / order.cancelled / ...| Kafka[(Kafka)]
     Kafka --> Consumer
-    DLT[DeadLetterConsumer] -.->|failed records| DLTTopic[<topic>.DLT]
+    DLT[DeadLetterConsumer] -.->|failed records| DLTTopic["{topic}.DLT"]
     Consumer -.-> DLT
 ```
 
@@ -69,7 +69,7 @@ flowchart LR
                                                       OrderEventConsumer
                                                                  │ (on failure)
                                                                  ▼
-                                                      DeadLetterConsumer ──► <topic>.DLT
+                                                      DeadLetterConsumer ──► {topic}.DLT
 ```
 
 </details>
