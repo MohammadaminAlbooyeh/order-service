@@ -26,13 +26,13 @@ jobs:
       - name: Check out java-common-lib
         uses: actions/checkout@v4
         with:
-          repository: MohammadaminAlbooyeh/scalable-ecommerce-platform
+          repository: MohammadaminAlbooyeh/smart-ecommerce-platform
           sparse-checkout: shared/java-common-lib
           sparse-checkout-cone-mode: false
-          path: scalable-ecommerce-platform
+          path: smart-ecommerce-platform
 
       - name: Install java-common-lib
-        run: mvn -f scalable-ecommerce-platform/shared/java-common-lib/pom.xml install -B -DskipTests
+        run: mvn -f smart-ecommerce-platform/shared/java-common-lib/pom.xml install -B -DskipTests
 
       - name: Build and test
         run: mvn verify -B
@@ -59,13 +59,13 @@ jobs:
       - name: Check out java-common-lib
         uses: actions/checkout@v4
         with:
-          repository: MohammadaminAlbooyeh/scalable-ecommerce-platform
+          repository: MohammadaminAlbooyeh/smart-ecommerce-platform
           sparse-checkout: shared/java-common-lib
           sparse-checkout-cone-mode: false
-          path: scalable-ecommerce-platform
+          path: smart-ecommerce-platform
 
       - name: Install java-common-lib
-        run: mvn -f scalable-ecommerce-platform/shared/java-common-lib/pom.xml install -B -DskipTests
+        run: mvn -f smart-ecommerce-platform/shared/java-common-lib/pom.xml install -B -DskipTests
 
       - name: OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
@@ -100,14 +100,14 @@ jobs:
       - name: Check out java-common-lib
         uses: actions/checkout@v4
         with:
-          repository: MohammadaminAlbooyeh/scalable-ecommerce-platform
+          repository: MohammadaminAlbooyeh/smart-ecommerce-platform
           sparse-checkout: shared/java-common-lib
           sparse-checkout-cone-mode: false
-          path: scalable-ecommerce-platform
+          path: smart-ecommerce-platform
 
       - name: Install java-common-lib and populate Maven cache
         run: |
-          mvn -f scalable-ecommerce-platform/shared/java-common-lib/pom.xml install -B -DskipTests
+          mvn -f smart-ecommerce-platform/shared/java-common-lib/pom.xml install -B -DskipTests
           mvn dependency:go-offline -B
 
       - name: Run Trivy vulnerability scanner (fs)
@@ -119,7 +119,7 @@ jobs:
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
-          skip-dirs: 'scalable-ecommerce-platform'
+          skip-dirs: 'smart-ecommerce-platform'
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
