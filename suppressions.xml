@@ -5,13 +5,13 @@
             Spring Boot 3.3.4 parent manages these versions. False positive from CVE scanner.
         </notes>
         <packageUrl regex="true">^pkg:maven/org\.springframework\.boot/spring\-boot\-starter\-parent@.*$</packageUrl>
-        <cvssBelow>11.0</cvssBelow>
+        <cvssBelow>10.0</cvssBelow>
     </suppress>
     <suppress>
         <notes>
             H2 database is test scope only, not in production
         </notes>
         <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
-        <cvssBelow>11.0</cvssBelow>
+        <cvssBelow>10.0</cvssBelow>
     </suppress>
 </suppressions>
