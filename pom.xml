@@ -20,6 +20,7 @@
         <java.version>17</java.version>
         <springdoc.version>2.5.0</springdoc.version>
         <lombok.version>1.18.32</lombok.version>
+        <jackson-bom.version>2.18.8</jackson-bom.version>
     </properties>
 
     <dependencies>

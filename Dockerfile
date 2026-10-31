@@ -1,4 +1,5 @@
 FROM eclipse-temurin:17-jre-alpine
+RUN apk upgrade --no-cache
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 COPY target/*.jar app.jar
