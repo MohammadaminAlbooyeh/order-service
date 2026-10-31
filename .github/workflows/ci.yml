@@ -49,29 +49,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-          cache: maven
-
-      - name: Check out java-common-lib
-        uses: actions/checkout@v4
-        with:
-          repository: MohammadaminAlbooyeh/smart-ecommerce-platform
-          sparse-checkout: shared/java-common-lib
-          sparse-checkout-cone-mode: false
-          path: smart-ecommerce-platform
-
-      - name: Install java-common-lib
-        run: mvn -f smart-ecommerce-platform/shared/java-common-lib/pom.xml install -B -DskipTests
-
       - name: OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
         id: depcheck
-        env:
-          JAVA_HOME: ''
         with:
           project: 'order-service'
           path: '.'
@@ -127,6 +107,10 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
+
+      - name: Package jar
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: mvn package -B -DskipTests
 
       - name: Build Docker image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
