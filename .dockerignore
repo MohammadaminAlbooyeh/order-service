@@ -1,5 +1,6 @@
 .git
-target/
+target/*
+!target/*.jar
 !.gitignore
 .idea/
 .vscode/
